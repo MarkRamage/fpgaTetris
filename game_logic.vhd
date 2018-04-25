@@ -28,12 +28,14 @@ signal gameboard : board_type;
 signal displayboard : board_type;
 signal new_block : std_logic;
 signal clk_1Hz : std_logic;
+signal lefty: std_logic;
+signal righty: std_logic;
 signal count : std_logic_vector(27 downto 0);
 
 begin
 
 	key <= rotate_cw or rotate_ccw;
-	move <= move_left or move_right;
+	--move <= move_left or move_right;
 	
 
 	
@@ -103,44 +105,66 @@ begin
 			end case;
 		end if;
 	end process;
-	
+	process (move_left, move_right)
+	begin
+		move <= move_left or move_right;
+	end process;
+--	
+--	process (move_right)
+--	begin
+--		if rising_edge(move_right) then
+--			righty<= '1';
+--		end if;
+--	end process;
 	--This process updates column value of block when the left or right buttons are pressed
-	process(move_left, move_right, new_block)
+	process(new_block,move)
 	begin
 		-- This sets a new starting point for new block to generate in randomly
 		if new_block = '1' then
 			-- TODO: RANDOM NUMBER GENERATION
-			col <= 5;
-		elsif rising_edge(move_left) then
+			col <= 4;
+	--	elsif lefty = '1' then
 	--		if move_left = '1' then
+		elsif rising_edge(move) then
+			if move_left = '1' then
 				if col > 0 then
 					col <= col - 1;
+					lefty <= '0';
 				end if;
---			elsif move_right = '1' then
---				if state = V then
---					if col < 10 then
---						col <= col + 1;
---					end if;
---				elsif state = H then
---					if col < 8 then
---						col <= col + 1;
---					end if;
---				else
---					if col < 9 then
---						col <= col + 1;
---					end if;
---				end if;
---			end if;
-		end if;
+		--elsif righty = '1' then
+			--if col > 8 then
+				--	col <= col + 1;
+					--righty <= '0';
+				--end if;
+			elsif move_right = '1' then
+				if state = V then
+					if col < 10 then
+						col <= col + 1;
+					end if;
+				elsif state = H then
+					if col < 8 then
+						col <= col + 1;
+					end if;
+				else
+					if col < 9 then
+						col <= col + 1;
+					end if;
+				end if; -- right or left
+			end if; -- move
+		end if; -- newblock
 	end process;
 				
 					
 		--Checks whether block can continue moving down the grid or if new block should be generated	process(clk_1Hz, state, col)
 	process(clk_1Hz, state, col, new_block, reset)
 	begin
-		
 		if reset = '1' then
 			new_block <= '1';
+			for i in 30 downto 0 loop
+				for j in 10 downto 0 loop
+					gameboard(i, j) <= '0';
+				end loop;
+			end loop;
 	
 		-- Sets row of new block back to 0 
 		elsif new_block = '1' then
@@ -171,6 +195,9 @@ begin
 					row <= row + 1;
 				else 
 					new_block <= '1';
+					gameboard(row, col) <= '1';
+					gameboard(row+1, col) <= '1';
+					gameboard(row, col+1) <= '1';
 				end if;
 --			elsif state = B then
 --				if gameboard(row+1, col) = '0' and gameboard(row+2, col+1) = '0' and row < 29 then
@@ -187,76 +214,49 @@ begin
 	process(row, col, state, reset)
 	begin
 		displayboard<=gameboard;
-		if reset = '1' then
-			for i in 30 downto 0 loop
-				for j in 10 downto 0 loop
-					gameboard(i, j) <= '0';
-				end loop;
-			end loop;
-		end if;
 		
 		case state is
 			when H =>
-				if row > 0 then
-					gameboard(row-1, col) <= '0';
-					gameboard(row-1, col+1) <= '0';
-					gameboard(row-1, col+2) <= '0';
+				if new_block = '0' then
+					displayboard(row, col) <= '1';
+					displayboard(row, col+1) <= '1';
+					displayboard(row, col+2) <= '1';
 				end if;
-				gameboard(row, col) <= '1';
-				gameboard(row, col+1) <= '1';
-				gameboard(row, col+2) <= '1';
 			
 			when V =>
-				if row > 0 then
-					gameboard(row-1, col) <= '0';
-					gameboard(row, col) <= '0';
-					gameboard(row+1, col) <= '0';
+				if new_block = '0' then
+					displayboard(row, col) <= '1';
+					displayboard(row+1, col) <= '1';
+					displayboard(row+2, col) <= '1';
 				end if;
-				gameboard(row, col) <= '1';
-				gameboard(row+1, col) <= '1';
-				gameboard(row+2, col) <= '1';
 				
 			when A =>
 				if new_block = '0' then
-					if row > 0 then
-						gameboard(row-1, col) <= '0';
-						gameboard(row, col) <= '0';
-						gameboard(row-1, col+1) <= '0';
-					end if;
 					displayboard(row, col) <= '1';
 					displayboard(row+1, col) <= '1';
 					displayboard(row, col+1) <= '1';
 				end if;
 				
 			when B =>
-				if row > 0 then
-					gameboard(row-1, col) <= '0';
-					gameboard(row, col+1) <= '0';
-					gameboard(row-1, col+1) <= '0';
+				if new_block = '0' then
+					displayboard(row, col) <= '1';
+					displayboard(row+1, col+1) <= '1';
+					displayboard(row, col+1) <= '1';
 				end if;
-				gameboard(row, col) <= '1';
-				gameboard(row+1, col+1) <= '1';
-				gameboard(row, col+1) <= '1';
 				
 			when C =>
-				if row > 0 then
-					gameboard(row-1, col+1) <= '0';
-					gameboard(row, col) <= '0';
-					gameboard(row, col+1) <= '0';
+				if new_block = '0' then
+					displayboard(row, col+1) <= '1';
+					displayboard(row+1, col) <= '1';
+					displayboard(row+1, col+1) <= '1';
 				end if;
-				gameboard(row, col+1) <= '1';
-				gameboard(row+1, col) <= '1';
-				gameboard(row+1, col+1) <= '1';
 
 			when D =>
-				if row > 0 then
-					gameboard(row-1, col) <= '0';
-					gameboard(row, col) <= '0';
-					gameboard(row, col+1) <= '0';
+				if new_block = '0' then
+					displayboard(row, col) <= '1';
+					displayboard(row+1, col) <= '1';
+					displayboard(row+1, col+1) <= '1';
 				end if;
-				gameboard(row, col) <= '1';
-				gameboard(row+1, col) <= '1';
-				gameboard(row+1, col+1) <= '1';
 		end case;
 	end process;
 	
