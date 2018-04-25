@@ -111,6 +111,13 @@ COMPONENT VGA_SYNC_module
 
 END COMPONENT;
 
+type board_type is array(30 downto 0, 10 downto 0) of std_logic;
+
+component game_logic 
+	port(rotate_cw, rotate_ccw, move_left, move_right, clk_50, reset : in std_logic;
+	  output_matrix : out board_type);
+end component;
+
 SIGNAL red_int : STD_LOGIC;
 SIGNAL green_int : STD_LOGIC;
 SIGNAL blue_int : STD_LOGIC;
@@ -119,8 +126,8 @@ SIGNAL pixel_clock_int : STD_LOGIC;
 SIGNAL pixel_row_int :STD_LOGIC_VECTOR(9 DOWNTO 0); 
 SIGNAL pixel_column_int :STD_LOGIC_VECTOR(9 DOWNTO 0); 
 SIGNAL color :STD_LOGIC_VECTOR(7 DOWNTO 0);
-type board is array (10 downto 0, 30 downto 0) of std_logic;
-SIGNAL gameboard: board;
+--type board is array (10 downto 0, 30 downto 0) of std_logic;
+SIGNAL gameboard: board_type;
 SIGNAL pixel_column_intd16:STD_LOGIC_VECTOR(9 DOWNTO 0);
 SIGNAL pixel_row_intd16:STD_LOGIC_VECTOR(9 DOWNTO 0);
 
@@ -134,9 +141,9 @@ BEGIN
 	HEX5 <= "1111111";
 	HEX6 <= "1111111";
 	HEX7 <= "1111111";
-	gameboard(0,0) <= '1';
-	gameboard(2,3) <= '1';
-	gameboard(8,8) <= '1';
+	--gameboard(0,0) <= '1';
+	--gameboard(2,3) <= '1';
+	--gameboard(8,8) <= '1';
 	PROCESS (pixel_column_int, pixel_row_int)
 	BEGIN
 		pixel_column_intd16 <= ("0000"& pixel_column_int(9 downto 4));
@@ -145,7 +152,7 @@ BEGIN
 			if ((unsigned(pixel_column_int) rem 16) = 0) or ((unsigned(pixel_row_int) rem 16) = 0) then
 				color <= "11111111";
 			else
-				if (gameboard(to_integer(unsigned(pixel_column_intd16))-15, to_integer(unsigned(pixel_row_intd16)))='1') then
+				if gameboard(to_integer(unsigned(pixel_row_intd16)), to_integer(unsigned(pixel_column_intd16))-15) = '1' then
 					color <= "00000000";
 				else
 					color <= "10000000";
@@ -171,5 +178,14 @@ BEGIN
 		 pixel_row			=>	pixel_row_int,
 		 pixel_column		=>	pixel_column_int
 		);
-	LEDG(3 downto 0) <= not KEY;
+		
+		U2: game_logic port map
+		(rotate_cw			=> KEY(0),
+		 rotate_ccw			=> KEY(1),
+		 move_left			=> KEY(3),
+		 move_right			=> KEY(2),
+		 clk_50				=> CLOCK_50,
+		 reset				=> SW(0),
+		 output_matrix		=> gameboard);
+	--LEDG(3 downto 0) <= not KEY;
 END structural;
