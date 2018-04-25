@@ -25,6 +25,7 @@ signal state : state_type;
 signal key, move: std_logic;
 signal col, row : integer;
 signal gameboard : board_type;
+signal displayboard : board_type;
 signal new_block : std_logic;
 signal clk_1Hz : std_logic;
 signal count : std_logic_vector(27 downto 0);
@@ -185,7 +186,7 @@ begin
 	-- This process updates the gameboard 
 	process(row, col, state, reset)
 	begin
-	
+		displayboard<=gameboard;
 		if reset = '1' then
 			for i in 30 downto 0 loop
 				for j in 10 downto 0 loop
@@ -216,14 +217,16 @@ begin
 				gameboard(row+2, col) <= '1';
 				
 			when A =>
-				if row > 0 then
-					gameboard(row-1, col) <= '0';
-					gameboard(row, col) <= '0';
-					gameboard(row-1, col+1) <= '0';
+				if new_block = '0' then
+					if row > 0 then
+						gameboard(row-1, col) <= '0';
+						gameboard(row, col) <= '0';
+						gameboard(row-1, col+1) <= '0';
+					end if;
+					displayboard(row, col) <= '1';
+					displayboard(row+1, col) <= '1';
+					displayboard(row, col+1) <= '1';
 				end if;
-				gameboard(row, col) <= '1';
-				gameboard(row+1, col) <= '1';
-				gameboard(row, col+1) <= '1';
 				
 			when B =>
 				if row > 0 then
@@ -258,11 +261,11 @@ begin
 	end process;
 	
 	-- This process writes the updated matrix to the output to be displayed by the display module
-	process(gameboard)
+	process(displayboard)
 	begin
 		for i in 30 downto 0 loop
 			for j in 10 downto 0 loop
-				output_matrix(i, j) <= gameboard(i, j);
+				output_matrix(i, j) <= displayboard(i, j);
 			end loop;
 		end loop;
 	end process;
