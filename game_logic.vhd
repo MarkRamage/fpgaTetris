@@ -22,45 +22,35 @@ architecture behavioral of game_logic is
 type state_type is (H, V, A, B, C, D);
 type board_type is array(30 downto 0, 10 downto 0) of std_logic;
 signal state : state_type;
-signal move: std_logic_vector(1 downto 0);
-signal key: std_logic;
-signal col, row, colinc : integer;
+signal key, move: std_logic;
+signal col, row : integer;
+signal offL, offR: integer := 0;
+signal lf_start: integer;
 signal gameboard : board_type;
 signal displayboard : board_type;
 signal new_block : std_logic;
 signal clk_1Hz : std_logic;
-signal clk_8Hz : std_logic;
 signal lefty: std_logic;
 signal righty: std_logic;
-signal count, count2 : std_logic_vector(27 downto 0);
-signal oldMoves, move1, move2 : std_logic_vector(1 downto 0);
-
+signal count : std_logic_vector(27 downto 0);
 
 begin
 
 	key <= rotate_cw or rotate_ccw;
-	--move <= not move_left or not move_right;
-	move(0) <= not move_right;
-	move(1) <= not move_left;
+	--move <= move_left or move_right;
+	
 
 	
 	--This process creates a 1Hz clock
 	process(clk_50)
 	begin
 		if rising_edge(clk_50) then
-			if count < X"17d7840" then
+			if count < X"7d7840" then
 				count <= count + 1;
 				clk_1Hz <= '0';
 			else 
 				count <= X"0000000";
 				clk_1Hz <= '1';
-			end if;
-			if count2 < x"2faf08" then
-				count2 <= count2+1;
-				clk_8Hz <= '0';
-			else
-				count2 <= X"0000000";
-				clk_8Hz <= '1';
 			end if;
 		end if;
 		
@@ -68,14 +58,13 @@ begin
 	
 	-- This process represents a state machine which handles the rotation of the blocks 
 	--based on user input
-	process(key, new_block)
+	process(rotate_cw, new_block)
 	begin
-		-- This sets the state of the new block based on a randomly generated number
+	
 		if new_block = '1' then
-			--TODO: SET STATE BASED ON RANDOM NUMBER
 			state <= A;
-			--new_block <= 0;
-		elsif rising_edge(key) then
+			
+		elsif rising_edge(rotate_cw) then
 			case state is
 				--State H represents horizontal line
 				when H =>
@@ -83,121 +72,111 @@ begin
 				--State V represents a vertical line	
 				when V =>
 					state <= H;
-				
 			   --State A represents :*
 				when A =>
-					if (rotate_cw = '1') then
+					if (gameboard(row+1, col+1) = '0') then
 						state <= B;
-					elsif (rotate_ccw = '1') then
-						state <= D;
+					else
+						state <= A;
 					end if;
 				--State B represents *:		
 				when B =>
-					if (rotate_cw = '1') then
+					if (gameboard(row+1, col) = '0') then
 						state <= C;
-					elsif (rotate_ccw = '1') then
-						state <= A;
+					else
+						state <= B;
 					end if;
 				--State C represents .:	
 				when C =>
-					if (rotate_cw = '1') then
+					if (gameboard(row, col) = '0') then
 						state <= D;
-					elsif (rotate_ccw = '1') then
-						state <= B;
+					else
+						state <= C;
 					end if;
 				--State D represent :.		
 				when D =>
-					if (rotate_cw = '1') then
+					if (gameboard(row, col+1) = '0') then
 						state <= A;
-					elsif (rotate_ccw = '1') then
+					else
 						state <= C;
 					end if;
 				when others => 
 					state <= H;
 			end case;
 		end if;
+		
 	end process;
---	process (move_left, move_right)
---	begin
---		move <= move_left or move_right;
---	end process;
---	
---	process (move_right)
---	begin
---		if rising_edge(move_right) then
---			righty<= '1';
---		end if;
---	end process;
---	process(clk_50, new_block)
---	begin
---		if new_block = '1' then
---			col <= 4;
---		elsif rising_edge(clk_50) then
---			move2 <= move1;
---			move1 <= move;
---			
---			if (move2(0) = '1' and oldMoves(0) = '1') then
---				col <= col + 1;
---			elsif (move2(1) = '1' and oldMoves(1) = '1') then
---				col <= col - 1;
---			end if;
---			
---			oldMoves <= move2;
---		end if;
---	end process;
-	--This process updates column value of block when the left or right buttons are pressed
-	process(move)
+	
+	
+	
+	process (move_left, move_right)
 	begin
-		--if rising_edge(move) then
-			if (move_left='0') and col > 0 then
-				colinc <= -1;
-			elsif (move_right='0') and col < 8 then
-				colinc <= 1;
-			else
-				colinc <= 0;
-			end if;
-		--end if;
+	
+		col <= offR - offL + 4;
+			
 	end process;
-	process(new_block,clk_1Hz)
+
+	
+	process(move_left, reset, new_block) -- move, new_block
 	begin
-		-- This sets a new starting point for new block to generate in randomly
-		if new_block = '1' then
-			-- TODO: RANDOM NUMBER GENERATION
-			col <= 4;
-	--	elsif lefty = '1' then
-	--		if move_left = '1' then
---		elsif rising_edge(move) then
---			if move_left = '0' then
---				if col > 0 then
---					col <= col - 1;
---					lefty <= '0';
---				end if;
---		--elsif righty = '1' then
---			--if col > 8 then
---				--	col <= col + 1;
---					--righty <= '0';
---				--end if;
---			elsif move_right = '0' then
---				if state = V then
---					if col < 9 then
---						col <= col + 1;
---					end if;
---				elsif state = H then
---					if col < 7 then
---						col <= col + 1;
---					end if;
---				else
---					if col < 8 then
---						col <= col + 1;
---					end if;
---				end if; -- right or left
---			end if; -- move
-		else
-			if (clk_1Hz = '1')  then
-					col <= col+ colinc;
+	
+		if reset = '1' or new_block = '1' then
+			offL <= 0;
+			
+		elsif (falling_edge(move_left)) then
+			if col > 0 then
+				if state = A or state = D then
+					if (gameboard(row, col-1) = '0' and gameboard(row+1, col-1) = '0') then
+						offL <= offL + 1;
+					end if;
+				elsif state = B then
+					if (gameboard(row, col-1) = '0' and gameboard(row+1, col) = '0') then
+						offL <= offL + 1;
+					end if;
+				elsif state = C then
+					if (gameboard(row, col) = '0' and gameboard(row+1, col-1) = '0') then
+						offL <= offL + 1;
+					end if;
+				end if;
 			end if;
-		end if; -- newblock
+		end if;
+		
 	end process;
+	
+	
+	process(move_right, reset, new_block)
+	begin
+	
+	   if reset = '1' or new_block = '1' then
+			offR <= 0;
+			
+		elsif (falling_edge(move_right)) then
+		
+			if state = V and col < 9 then
+				offR <= offR + 1;
+				
+			elsif state = H and col < 7 then
+				offR <= offR + 1;
+				
+			elsif col < 8 then
+				if state = B or state = C then
+					if (gameboard(row, col+2) = '0' and gameboard(row+1, col+2) = '0') then
+						offR <= offR + 1;
+					end if;
+				elsif state = A then
+					if (gameboard(row, col+2) = '0' and gameboard(row+1, col+1) = '0') then
+						offR <= offR + 1;
+					end if;
+				elsif state = D then
+					if (gameboard(row, col+1) = '0' and gameboard(row+1, col+2) = '0') then
+						offR <= offR + 1;
+					end if;
+				end if;
+			end if;
+		end if;
+		
+	end process;
+	
 				
 					
 		--Checks whether block can continue moving down the grid or if new block should be generated	process(clk_1Hz, state, col)
@@ -229,13 +208,25 @@ begin
 --				else 
 --					new_block <= '1';
 --				end if;
---			elsif state = C or state = D then
---				if gameboard(row+2, col) = '0' and gameboard(row+2, col+1) = '0' and row < 29 then
---					row <= row + 1;
---				else 
---					new_block <= '1';
---				end if;
-			if state = A then
+			if state = D then
+				if gameboard(row+2, col) = '0' and gameboard(row+2, col+1) = '0' and row < 28 then
+					row <= row + 1;
+				else 
+					new_block <= '1';
+					gameboard(row, col) <= '1';
+					gameboard(row+1, col) <= '1';
+					gameboard(row+1, col+1) <= '1';
+				end if;
+			elsif state = C then
+				if gameboard(row+2, col) = '0' and gameboard(row+2, col+1) = '0' and row < 28 then
+					row <= row + 1;
+				else 
+					new_block <= '1';
+					gameboard(row+1, col) <= '1';
+					gameboard(row, col+1) <= '1';
+					gameboard(row+1, col+1) <= '1';
+				end if;
+			elsif state = A then
 				if gameboard(row+2, col) = '0' and gameboard(row+1, col+1) = '0' and row < 28 then
 					row <= row + 1;
 				else 
@@ -244,12 +235,15 @@ begin
 					gameboard(row+1, col) <= '1';
 					gameboard(row, col+1) <= '1';
 				end if;
---			elsif state = B then
---				if gameboard(row+1, col) = '0' and gameboard(row+2, col+1) = '0' and row < 29 then
---					row <= row + 1;
---				else 
---					new_block <= '1';
---				end if;
+			elsif state = B then
+				if gameboard(row+1, col) = '0' and gameboard(row+2, col+1) = '0' and row < 28 then
+					row <= row + 1;
+				else 
+					new_block <= '1';
+					gameboard(row, col) <= '1';
+					gameboard(row, col+1) <= '1';
+					gameboard(row+1, col+1) <= '1';
+				end if;
 			end if;
 --			row <= row + 1;
 		end if;
