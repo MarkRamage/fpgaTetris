@@ -23,19 +23,20 @@ type state_type is (H, V, A, B, C, D);
 type board_type is array(30 downto 0, 10 downto 0) of std_logic;
 signal state : state_type;
 signal key, move: std_logic;
-signal col, row : integer;
+signal col, row, colinc : integer;
 signal gameboard : board_type;
 signal displayboard : board_type;
 signal new_block : std_logic;
 signal clk_1Hz : std_logic;
+signal clk_8Hz : std_logic;
 signal lefty: std_logic;
 signal righty: std_logic;
-signal count : std_logic_vector(27 downto 0);
+signal count, count2 : std_logic_vector(27 downto 0);
 
 begin
 
 	key <= rotate_cw or rotate_ccw;
-	--move <= move_left or move_right;
+	move <= not move_left or not move_right;
 	
 
 	
@@ -49,6 +50,13 @@ begin
 			else 
 				count <= X"0000000";
 				clk_1Hz <= '1';
+			end if;
+			if count2 < x"2faf08" then
+				count2 <= count2+1;
+				clk_8Hz <= '0';
+			else
+				count2 <= X"0000000";
+				clk_8Hz <= '1';
 			end if;
 		end if;
 		
@@ -105,10 +113,10 @@ begin
 			end case;
 		end if;
 	end process;
-	process (move_left, move_right)
-	begin
-		move <= move_left or move_right;
-	end process;
+--	process (move_left, move_right)
+--	begin
+--		move <= move_left or move_right;
+--	end process;
 --	
 --	process (move_right)
 --	begin
@@ -117,7 +125,19 @@ begin
 --		end if;
 --	end process;
 	--This process updates column value of block when the left or right buttons are pressed
-	process(new_block,move)
+	process(move)
+	begin
+		--if rising_edge(move) then
+			if (move_left='0') and col > 0 then
+				colinc <= -1;
+			elsif (move_right='0') and col < 8 then
+				colinc <= 1;
+			else
+				colinc <= 0;
+			end if;
+		--end if;
+	end process;
+	process(new_block,clk_1Hz)
 	begin
 		-- This sets a new starting point for new block to generate in randomly
 		if new_block = '1' then
@@ -125,32 +145,36 @@ begin
 			col <= 4;
 	--	elsif lefty = '1' then
 	--		if move_left = '1' then
-		elsif rising_edge(move) then
-			if move_left = '1' then
-				if col > 0 then
-					col <= col - 1;
-					lefty <= '0';
-				end if;
-		--elsif righty = '1' then
-			--if col > 8 then
-				--	col <= col + 1;
-					--righty <= '0';
-				--end if;
-			elsif move_right = '1' then
-				if state = V then
-					if col < 10 then
-						col <= col + 1;
-					end if;
-				elsif state = H then
-					if col < 8 then
-						col <= col + 1;
-					end if;
-				else
-					if col < 9 then
-						col <= col + 1;
-					end if;
-				end if; -- right or left
-			end if; -- move
+--		elsif rising_edge(move) then
+--			if move_left = '0' then
+--				if col > 0 then
+--					col <= col - 1;
+--					lefty <= '0';
+--				end if;
+--		--elsif righty = '1' then
+--			--if col > 8 then
+--				--	col <= col + 1;
+--					--righty <= '0';
+--				--end if;
+--			elsif move_right = '0' then
+--				if state = V then
+--					if col < 9 then
+--						col <= col + 1;
+--					end if;
+--				elsif state = H then
+--					if col < 7 then
+--						col <= col + 1;
+--					end if;
+--				else
+--					if col < 8 then
+--						col <= col + 1;
+--					end if;
+--				end if; -- right or left
+--			end if; -- move
+		else
+			if (clk_1Hz = '1')  then
+					col <= col+ colinc;
+			end if;
 		end if; -- newblock
 	end process;
 				
