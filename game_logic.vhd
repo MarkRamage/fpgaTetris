@@ -22,7 +22,8 @@ architecture behavioral of game_logic is
 type state_type is (H, V, A, B, C, D);
 type board_type is array(30 downto 0, 10 downto 0) of std_logic;
 signal state : state_type;
-signal key, move: std_logic;
+signal move: std_logic_vector(1 downto 0);
+signal key: std_logic;
 signal col, row, colinc : integer;
 signal gameboard : board_type;
 signal displayboard : board_type;
@@ -32,12 +33,15 @@ signal clk_8Hz : std_logic;
 signal lefty: std_logic;
 signal righty: std_logic;
 signal count, count2 : std_logic_vector(27 downto 0);
+signal oldMoves, move1, move2 : std_logic_vector(1 downto 0);
+
 
 begin
 
 	key <= rotate_cw or rotate_ccw;
-	move <= not move_left or not move_right;
-	
+	--move <= not move_left or not move_right;
+	move(0) <= not move_right;
+	move(1) <= not move_left;
 
 	
 	--This process creates a 1Hz clock
@@ -122,6 +126,23 @@ begin
 --	begin
 --		if rising_edge(move_right) then
 --			righty<= '1';
+--		end if;
+--	end process;
+--	process(clk_50, new_block)
+--	begin
+--		if new_block = '1' then
+--			col <= 4;
+--		elsif rising_edge(clk_50) then
+--			move2 <= move1;
+--			move1 <= move;
+--			
+--			if (move2(0) = '1' and oldMoves(0) = '1') then
+--				col <= col + 1;
+--			elsif (move2(1) = '1' and oldMoves(1) = '1') then
+--				col <= col - 1;
+--			end if;
+--			
+--			oldMoves <= move2;
 --		end if;
 --	end process;
 	--This process updates column value of block when the left or right buttons are pressed
