@@ -245,6 +245,7 @@ begin
 	process(clk_1Hz, state, col, new_block, reset)
 		variable fullrow: integer :=-1;
 		variable rowcleared: integer:=0;
+		variable tempboard: board_type;
 	begin
 		if reset = '1' then
 			fullrow:=-1;
@@ -262,27 +263,38 @@ begin
 			for i in 30 downto 0 loop
 				
 					if (i = 0) then
-						gameboard(i, 0) <= '0';
-						gameboard(i, 1) <= '0';
-						gameboard(i, 2) <= '0';
-						gameboard(i, 3) <= '0';
-						gameboard(i, 4) <= '0';
-						gameboard(i, 5) <= '0';
-						gameboard(i, 6) <= '0';
-						gameboard(i, 7) <= '0';
-						gameboard(i, 8) <= '0';
-						gameboard(i, 9) <= '0';
+						tempboard(i, 0) := '0';
+						tempboard(i, 1) := '0';
+						tempboard(i, 2) := '0';
+						tempboard(i, 3) := '0';
+						tempboard(i, 4) := '0';
+						tempboard(i, 5) := '0';
+						tempboard(i, 6) := '0';
+						tempboard(i, 7) := '0';
+						tempboard(i, 8) := '0';
+						tempboard(i, 9) := '0';
 					elsif (i <= fullrow) then
-						gameboard(i, 0) <= gameboard(i-1, 0);
-						gameboard(i, 1) <= gameboard(i-1, 1);
-						gameboard(i, 2) <= gameboard(i-1, 2);
-						gameboard(i, 3) <= gameboard(i-1, 3);
-						gameboard(i, 4) <= gameboard(i-1, 4);
-						gameboard(i, 5) <= gameboard(i-1, 5);
-						gameboard(i, 6) <= gameboard(i-1, 6);
-						gameboard(i, 7) <= gameboard(i-1, 7);
-						gameboard(i, 8) <= gameboard(i-1, 8);
-						gameboard(i, 9) <= gameboard(i-1, 9);
+						tempboard(i, 0) := gameboard(i-1, 0);
+						tempboard(i, 1) := gameboard(i-1, 1);
+						tempboard(i, 2) := gameboard(i-1, 2);
+						tempboard(i, 3) := gameboard(i-1, 3);
+						tempboard(i, 4) := gameboard(i-1, 4);
+						tempboard(i, 5) := gameboard(i-1, 5);
+						tempboard(i, 6) := gameboard(i-1, 6);
+						tempboard(i, 7) := gameboard(i-1, 7);
+						tempboard(i, 8) := gameboard(i-1, 8);
+						tempboard(i, 9) := gameboard(i-1, 9);
+					else
+						tempboard(i, 0) := gameboard(i, 0);
+						tempboard(i, 1) := gameboard(i, 1);
+						tempboard(i, 2) := gameboard(i, 2);
+						tempboard(i, 3) := gameboard(i, 3);
+						tempboard(i, 4) := gameboard(i, 4);
+						tempboard(i, 5) := gameboard(i, 5);
+						tempboard(i, 6) := gameboard(i, 6);
+						tempboard(i, 7) := gameboard(i, 7);
+						tempboard(i, 8) := gameboard(i, 8);
+						tempboard(i, 9) := gameboard(i, 9);
 					end if;
 				
 			end loop;
@@ -291,10 +303,6 @@ begin
 			new_block <= '0';
 		
 		elsif rising_edge(clk_1Hz) then
-			if rowcleared = 1 then
-				fullrow := -1;
-				rowcleared:=0;
-			end if;
 			for i in 30 downto 0 loop
 				if (gameboard(i, 0) = '1' and 
 						gameboard(i, 1) = '1' and 
@@ -309,8 +317,11 @@ begin
 					fullrow:=i;
 				end if;	
 			end loop;
-		
-			if state = V then
+			if rowcleared = 1 then
+				fullrow := -1;
+				rowcleared:=0;
+				gameboard <= tempboard;
+			elsif state = V then
 				if gameboard(row+2, col) = '0' and row < 28 then
 					row <= row + 1;
 				else 
