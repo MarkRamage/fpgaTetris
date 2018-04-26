@@ -115,7 +115,9 @@ type board_type is array(30 downto 0, 10 downto 0) of std_logic;
 
 component game_logic 
 	port(rotate_cw, rotate_ccw, move_left, move_right, clk_50, reset : in std_logic;
-	  output_matrix : out board_type);
+		  output_matrix : out board_type;
+		  game_over : out std_logic;
+		  score: out integer);
 end component;
 
 SIGNAL red_int : STD_LOGIC;
@@ -130,7 +132,8 @@ SIGNAL color :STD_LOGIC_VECTOR(7 DOWNTO 0);
 SIGNAL gameboard: board_type;
 SIGNAL pixel_column_intd16:STD_LOGIC_VECTOR(9 DOWNTO 0);
 SIGNAL pixel_row_intd16:STD_LOGIC_VECTOR(9 DOWNTO 0);
-
+SIGNAL gover: STD_LOGIC;
+SIGNAL score: integer;
 
 BEGIN
 	HEX0 <= "1111111";
@@ -164,9 +167,9 @@ BEGIN
 	END PROCESS;
 	U1: VGA_SYNC_module PORT MAP
 		(clock_50Mhz		=>	CLOCK_50,
-		 red					=>	SW(17),
-		 green				=>	SW(16),	
-		 blue					=>	SW(15),
+		 red					=>	'1',
+		 green				=>	not gover,	
+		 blue					=>	not gover,
 		 color_8bit			=> color,
 		 red_out				=>	VGA_R(7 DOWNTO 0),
 		 green_out			=>	VGA_G(7 DOWNTO 0),
@@ -186,6 +189,8 @@ BEGIN
 		 move_right			=> KEY(2),
 		 clk_50				=> CLOCK_50,
 		 reset				=> SW(0),
-		 output_matrix		=> gameboard);
+		 output_matrix		=> gameboard,
+		 game_over        => gover,
+		 score 				=> score);
 	--LEDG(3 downto 0) <= not KEY;
 END structural;
