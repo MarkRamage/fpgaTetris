@@ -120,6 +120,11 @@ component game_logic
 		  score: out integer);
 end component;
 
+component bcd_seven is
+	port(bcd: in STD_LOGIC_VECTOR(3 downto 0);
+		  seven: out STD_LOGIC_VECTOR(7 downto 1));
+end component;
+
 SIGNAL red_int : STD_LOGIC;
 SIGNAL green_int : STD_LOGIC;
 SIGNAL blue_int : STD_LOGIC;
@@ -134,12 +139,13 @@ SIGNAL pixel_column_intd16:STD_LOGIC_VECTOR(9 DOWNTO 0);
 SIGNAL pixel_row_intd16:STD_LOGIC_VECTOR(9 DOWNTO 0);
 SIGNAL gover: STD_LOGIC;
 SIGNAL score: integer;
+SIGNAL Hex0n,Hex1n,Hex2n,Hex3n: STD_LOGIC_VECTOR(7 downto 1);
 
 BEGIN
-	HEX0 <= "1111111";
-	HEX1 <= "1111111";
-	HEX2 <= "1111111";
-	HEX3 <= "1111111";
+	HEX0 <= not Hex0n;
+	HEX1 <= not Hex1n;
+	HEX2 <= not Hex2n;
+	HEX3 <= not Hex3n;
 	HEX4 <= "1111111";
 	HEX5 <= "1111111";
 	HEX6 <= "1111111";
@@ -192,5 +198,25 @@ BEGIN
 		 output_matrix		=> gameboard,
 		 game_over        => gover,
 		 score 				=> score);
+	U3: bcd_seven port map
+	(
+		bcd					=> std_logic_vector(to_unsigned(score, 16))(3 downto 0),
+		seven					=> Hex0n
+	);
+	U4: bcd_seven port map
+	(
+		bcd					=> std_logic_vector(to_unsigned(score, 16))(7 downto 4),
+		seven					=> Hex1n
+	);
+	U5: bcd_seven port map
+	(
+		bcd					=> std_logic_vector(to_unsigned(score, 16))(11 downto 8),
+		seven					=> Hex2n
+	);
+	U6: bcd_seven port map
+	(
+		bcd					=> std_logic_vector(to_unsigned(score, 16))(15 downto 12),
+		seven					=> Hex3n
+	);
 	--LEDG(3 downto 0) <= not KEY;
 END structural;
